@@ -193,34 +193,22 @@
         new WOW().init();
 
         function vlc_player() {
-            var a = document.createElement('a');
-            a.href = "intent:{{file_url}}#Intent;package=org.videolan.vlc;action=android.intent.action.VIEW;type=video/*;end";
-            a.click();
+            window.location = "vlc://{{file_url}}";
         }
         function mx_player() {
-            var a = document.createElement('a');
-            a.href = "intent:{{file_url}}#Intent;package=com.mxtech.videoplayer.ad;action=android.intent.action.VIEW;type=video/*;end";
-            a.click();
+            window.location = "intent:{{file_url}}#Intent;package=com.mxtech.videoplayer.ad;end";
         }
         function playit_player() {
-            var a = document.createElement('a');
-            a.href = "intent:{{file_url}}#Intent;package=com.playit.videoplayer;action=android.intent.action.VIEW;type=video/*;end";
-            a.click();
+            window.location = "playit://{{file_url}}";
         }
         function km_player() {
-            var a = document.createElement('a');
-            a.href = "intent:{{file_url}}#Intent;package=com.kmplayer;action=android.intent.action.VIEW;type=video/*;end";
-            a.click();
+            window.location = "kmplayer://{{file_url}}";
         }
         function s_player() {
-            var a = document.createElement('a');
-            a.href = "intent:{{file_url}}#Intent;package=com.PlayerApp;action=android.intent.action.VIEW;type=video/*;end";
-            a.click();
+            window.location = "splayer://{{file_url}}";
         }
         function hd_player() {
-            var a = document.createElement('a');
-            a.href = "intent:{{file_url}}#Intent;package=com.hdvideoplayer;action=android.intent.action.VIEW;type=video/*;end";
-            a.click();
+            window.location = "hdvd://{{file_url}}";
         }
     </script>
 </body>
