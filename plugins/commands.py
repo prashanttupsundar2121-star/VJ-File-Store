@@ -318,78 +318,92 @@ async def start(client, message):
 async def fsub_handler(client, message):
     user_id = message.from_user.id
     if user_id not in ADMINS:
-        return await message.reply_text("<b>❌ You are not authorized to use this command.</b>", parse_mode=enums.ParseMode.HTML)
+        return await message.reply_text("<b>❌ You are not authorized.</b>", parse_mode=enums.ParseMode.HTML)
+    channels = await db.get_fsub_channels()
+    enabled = await db.is_fsub_enabled()
+    ch_list = "\n".join([f"  • <code>{ch}</code>" for ch in channels]) if channels else "  None"
+    text = (
+        f"<b>📢 Force Subscribe Settings</b>\n\n"
+        f"Status: <b>{'✅ Enabled' if enabled else '❌ Disabled'}</b>\n"
+        f"Channels ({len(channels)}):\n{ch_list}\n\n"
+        f"<b>Commands:</b>\n"
+        f"/fsub_add <code>channel_id</code> — Add channel\n"
+        f"/fsub_remove <code>channel_id</code> — Remove channel\n"
+        f"/fsub_list — Show all channels\n"
+        f"/fsub_on — Enable force sub\n"
+        f"/fsub_off — Disable force sub"
+    )
+    await message.reply_text(text, parse_mode=enums.ParseMode.HTML)
 
+
+@Client.on_message(filters.command("fsub_on") & filters.private)
+async def fsub_on(client, message):
+    if message.from_user.id not in ADMINS:
+        return await message.reply_text("<b>❌ You are not authorized.</b>", parse_mode=enums.ParseMode.HTML)
+    await db.set_fsub_enabled(True)
+    await message.reply_text("<b>✅ Force Subscribe ENABLED!</b>", parse_mode=enums.ParseMode.HTML)
+
+
+@Client.on_message(filters.command("fsub_off") & filters.private)
+async def fsub_off(client, message):
+    if message.from_user.id not in ADMINS:
+        return await message.reply_text("<b>❌ You are not authorized.</b>", parse_mode=enums.ParseMode.HTML)
+    await db.set_fsub_enabled(False)
+    await message.reply_text("<b>❌ Force Subscribe DISABLED!</b>", parse_mode=enums.ParseMode.HTML)
+
+
+@Client.on_message(filters.command("fsub_list") & filters.private)
+async def fsub_list(client, message):
+    if message.from_user.id not in ADMINS:
+        return await message.reply_text("<b>❌ You are not authorized.</b>", parse_mode=enums.ParseMode.HTML)
+    channels = await db.get_fsub_channels()
+    enabled = await db.is_fsub_enabled()
+    if not channels:
+        return await message.reply_text("<b>No channels added yet.</b>", parse_mode=enums.ParseMode.HTML)
+    ch_list = "\n".join([f"{i+1}. <code>{ch}</code>" for i, ch in enumerate(channels)])
+    await message.reply_text(
+        f"<b>📢 Force Sub Channels</b>\nStatus: {'✅ ON' if enabled else '❌ OFF'}\n\n{ch_list}",
+        parse_mode=enums.ParseMode.HTML
+    )
+
+
+@Client.on_message(filters.command("fsub_add") & filters.private)
+async def fsub_add(client, message):
+    if message.from_user.id not in ADMINS:
+        return await message.reply_text("<b>❌ You are not authorized.</b>", parse_mode=enums.ParseMode.HTML)
     args = message.command
     if len(args) < 2:
-        channels = await db.get_fsub_channels()
-        enabled = await db.is_fsub_enabled()
-        ch_list = "\n".join([f"  • <code>{ch}</code>" for ch in channels]) if channels else "  None"
-        text = (
-            f"<b>📢 Force Subscribe Settings</b>\n\n"
-            f"Status: <b>{'✅ Enabled' if enabled else '❌ Disabled'}</b>\n"
-            f"Channels ({len(channels)}):\n{ch_list}\n\n"
-            f"<b>Commands:</b>\n"
-            f"/fsub add <code>channel_id</code> — Add channel\n"
-            f"/fsub remove <code>channel_id</code> — Remove channel\n"
-            f"/fsub list — Show all channels\n"
-            f"/fsub on — Enable force sub\n"
-            f"/fsub off — Disable force sub"
-        )
-        return await message.reply_text(text, parse_mode=enums.ParseMode.HTML)
-
-    action = args[1].lower()
-
-    if action == "on":
-        await db.set_fsub_enabled(True)
-        await message.reply_text("<b>✅ Force Subscribe ENABLED!</b>", parse_mode=enums.ParseMode.HTML)
-
-    elif action == "off":
-        await db.set_fsub_enabled(False)
-        await message.reply_text("<b>❌ Force Subscribe DISABLED!</b>", parse_mode=enums.ParseMode.HTML)
-
-    elif action == "list":
-        channels = await db.get_fsub_channels()
-        enabled = await db.is_fsub_enabled()
-        if not channels:
-            return await message.reply_text("<b>No channels added yet.</b>", parse_mode=enums.ParseMode.HTML)
-        ch_list = "\n".join([f"{i+1}. <code>{ch}</code>" for i, ch in enumerate(channels)])
-        await message.reply_text(
-            f"<b>📢 Force Sub Channels</b>\nStatus: {'✅ ON' if enabled else '❌ OFF'}\n\n{ch_list}",
-            parse_mode=enums.ParseMode.HTML
-        )
-
-    elif action == "add":
-        if len(args) < 3:
-            return await message.reply_text("<b>Usage: /fsub add <channel_id></b>", parse_mode=enums.ParseMode.HTML)
-        try:
-            ch_id = int(args[2])
-        except ValueError:
-            return await message.reply_text("<b>❌ Invalid channel ID. Must be a number like -1001234567890</b>", parse_mode=enums.ParseMode.HTML)
-        channels = await db.get_fsub_channels()
-        if len(channels) >= 4:
-            return await message.reply_text("<b>❌ Maximum 4 channels allowed!</b>", parse_mode=enums.ParseMode.HTML)
-        result = await db.add_fsub_channel(ch_id)
-        if result:
-            await message.reply_text(f"<b>✅ Channel <code>{ch_id}</code> added to force sub!</b>", parse_mode=enums.ParseMode.HTML)
-        else:
-            await message.reply_text(f"<b>⚠️ Channel <code>{ch_id}</code> already exists!</b>", parse_mode=enums.ParseMode.HTML)
-
-    elif action == "remove":
-        if len(args) < 3:
-            return await message.reply_text("<b>Usage: /fsub remove <channel_id></b>", parse_mode=enums.ParseMode.HTML)
-        try:
-            ch_id = int(args[2])
-        except ValueError:
-            return await message.reply_text("<b>❌ Invalid channel ID.</b>", parse_mode=enums.ParseMode.HTML)
-        result = await db.remove_fsub_channel(ch_id)
-        if result:
-            await message.reply_text(f"<b>✅ Channel <code>{ch_id}</code> removed!</b>", parse_mode=enums.ParseMode.HTML)
-        else:
-            await message.reply_text(f"<b>❌ Channel <code>{ch_id}</code> not found!</b>", parse_mode=enums.ParseMode.HTML)
-
+        return await message.reply_text("<b>Usage: /fsub_add <code>channel_id</code>\n\nExample: /fsub_add -1001234567890</b>", parse_mode=enums.ParseMode.HTML)
+    try:
+        ch_id = int(args[1])
+    except ValueError:
+        return await message.reply_text("<b>❌ Invalid channel ID. Example: -1001234567890</b>", parse_mode=enums.ParseMode.HTML)
+    channels = await db.get_fsub_channels()
+    if len(channels) >= 4:
+        return await message.reply_text("<b>❌ Maximum 4 channels allowed!</b>", parse_mode=enums.ParseMode.HTML)
+    result = await db.add_fsub_channel(ch_id)
+    if result:
+        await message.reply_text(f"<b>✅ Channel <code>{ch_id}</code> added!</b>", parse_mode=enums.ParseMode.HTML)
     else:
-        await message.reply_text("<b>❌ Invalid action. Use: add, remove, list, on, off</b>", parse_mode=enums.ParseMode.HTML)
+        await message.reply_text(f"<b>⚠️ Channel <code>{ch_id}</code> already exists!</b>", parse_mode=enums.ParseMode.HTML)
+
+
+@Client.on_message(filters.command("fsub_remove") & filters.private)
+async def fsub_remove(client, message):
+    if message.from_user.id not in ADMINS:
+        return await message.reply_text("<b>❌ You are not authorized.</b>", parse_mode=enums.ParseMode.HTML)
+    args = message.command
+    if len(args) < 2:
+        return await message.reply_text("<b>Usage: /fsub_remove <code>channel_id</code></b>", parse_mode=enums.ParseMode.HTML)
+    try:
+        ch_id = int(args[1])
+    except ValueError:
+        return await message.reply_text("<b>❌ Invalid channel ID.</b>", parse_mode=enums.ParseMode.HTML)
+    result = await db.remove_fsub_channel(ch_id)
+    if result:
+        await message.reply_text(f"<b>✅ Channel <code>{ch_id}</code> removed!</b>", parse_mode=enums.ParseMode.HTML)
+    else:
+        await message.reply_text(f"<b>❌ Channel <code>{ch_id}</code> not found!</b>", parse_mode=enums.ParseMode.HTML)
 
 
 # ── FORCE SUB CHECK CALLBACK ─────────────────────────────────────────────────
@@ -418,19 +432,4 @@ async def shortener_api_handler(client, m: Message):
         return await m.reply(s)
     elif len(cmd) == 2:    
         api = cmd[1].strip()
-        await update_user_info(user_id, {"shortener_api": api})
-        await m.reply("<b>Shortener API updated successfully to</b> " + api)
-
-
-@Client.on_message(filters.command("base_site") & filters.private)
-async def base_site_handler(client, m: Message):
-    user_id = m.from_user.id
-    user = await get_user(user_id)
-    cmd = m.command
-    text = f"`/base_site (base_site)`\n\n<b>Current base site: None\n\n EX:</b> `/base_site shortnerdomain.com`\n\nIf You Want To Remove Base Site Then Copy This And Send To Bot - `/base_site None`"
-    if len(cmd) == 1:
-        return await m.reply(text=text, disable_web_page_preview=True)
-    elif len(cmd) == 2:
-        base_site = cmd[1].strip()
-        if base_site == None:
-            await update_user_info(user_id, {"base_site": base_site})
+        
