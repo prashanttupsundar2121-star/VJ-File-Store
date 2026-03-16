@@ -1,7 +1,3 @@
-# Don't Remove Credit @VJ_Bots
-# Subscribe YouTube Channel For Amazing Bot @Tech_VJ
-# Ask Doubt on telegram @KingVJ01
-
 import motor.motor_asyncio
 from config import DB_NAME, DB_URI
 
@@ -11,6 +7,7 @@ class Database:
         self._client = motor.motor_asyncio.AsyncIOMotorClient(uri)
         self.db = self._client[database_name]
         self.col = self.db.users
+        self.fsub_col = self.db.force_sub
 
     def new_user(self, id, name):
         return dict(
@@ -35,6 +32,56 @@ class Database:
 
     async def delete_user(self, user_id):
         await self.col.delete_many({'id': int(user_id)})
+
+    # ── FORCE SUB METHODS ──────────────────────────────────────────
+
+    async def get_fsub_settings(self):
+        doc = await self.fsub_col.find_one({'_id': 'settings'})
+        if not doc:
+            doc = {'_id': 'settings', 'enabled': False, 'channels': []}
+            await self.fsub_col.insert_one(doc)
+        return doc
+
+    async def add_fsub_channel(self, channel_id: int):
+        settings = await self.get_fsub_settings()
+        channels = settings.get('channels', [])
+        if channel_id not in channels:
+            channels.append(channel_id)
+            await self.fsub_col.update_one(
+                {'_id': 'settings'},
+                {'$set': {'channels': channels}},
+                upsert=True
+            )
+            return True
+        return False
+
+    async def remove_fsub_channel(self, channel_id: int):
+        settings = await self.get_fsub_settings()
+        channels = settings.get('channels', [])
+        if channel_id in channels:
+            channels.remove(channel_id)
+            await self.fsub_col.update_one(
+                {'_id': 'settings'},
+                {'$set': {'channels': channels}},
+                upsert=True
+            )
+            return True
+        return False
+
+    async def get_fsub_channels(self):
+        settings = await self.get_fsub_settings()
+        return settings.get('channels', [])
+
+    async def set_fsub_enabled(self, enabled: bool):
+        await self.fsub_col.update_one(
+            {'_id': 'settings'},
+            {'$set': {'enabled': enabled}},
+            upsert=True
+        )
+
+    async def is_fsub_enabled(self):
+        settings = await self.get_fsub_settings()
+        return settings.get('enabled', False)
 
 
 db = Database(DB_URI, DB_NAME)
