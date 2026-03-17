@@ -105,7 +105,8 @@ async def start(client, message):
         await message.reply_photo(
             photo=random.choice(PICS),
             caption=script.START_TXT.format(message.from_user.mention, me.mention),
-            reply_markup=reply_markup
+            reply_markup=reply_markup,
+            message_effect_id=5104841245755180586
         )
         return
 
@@ -429,6 +430,4 @@ async def shortener_api_handler(client, m: Message):
     cmd = m.command
     if len(cmd) == 1:
         s = script.SHORTENER_API_MESSAGE.format(base_site=user["base_site"], shortener_api=user["shortener_api"])
-        return await m.reply(s)
-    elif len(cmd) == 2:
-        api = cmd[1].st
+        return await m.reply
