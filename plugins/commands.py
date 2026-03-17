@@ -95,7 +95,7 @@ async def start(client, message):
             InlineKeyboardButton('🔍 ᴀɴɪᴍᴇ sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ', url='https://t.me/animeinhindifangroup'),
             InlineKeyboardButton('🎌 ɪɴғɪɴɪᴛᴇ ᴅʀᴀᴍᴀs', url='https://t.me/infinite_dramas')
             ],[
-            InlineKeyboardButton('💁‍♀️ ʜᴇʟᴘ', callback_data='help'),
+            InlineKeyboardButton('👨‍💻 ᴅᴇᴠᴇʟᴏᴘᴇʀ', callback_data='developer'),
             InlineKeyboardButton('🎭 ᴅʀᴀᴍᴀ sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ', url='https://t.me/+dxm_jP224jI3ZjFl')
         ]]
         if CLONE_MODE == True:
@@ -431,5 +431,4 @@ async def shortener_api_handler(client, m: Message):
         s = script.SHORTENER_API_MESSAGE.format(base_site=user["base_site"], shortener_api=user["shortener_api"])
         return await m.reply(s)
     elif len(cmd) == 2:
-        api = cmd[1].strip()
-  
+        api = cmd[1].s
