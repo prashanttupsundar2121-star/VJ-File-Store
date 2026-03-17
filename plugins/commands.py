@@ -45,10 +45,10 @@ async def check_force_sub(client, user_id):
     """Returns list of channels user hasn't joined. Empty = all joined."""
     if not await db.is_fsub_enabled():
         return []
-    
+
     channels = await db.get_fsub_channels()
     not_joined = []
-    
+
     for ch_id in channels:
         try:
             member = await client.get_chat_member(ch_id, user_id)
@@ -58,7 +58,7 @@ async def check_force_sub(client, user_id):
             not_joined.append(ch_id)
         except Exception as e:
             logger.warning(f"Force sub check error for {ch_id}: {e}")
-    
+
     return not_joined
 
 
@@ -173,7 +173,7 @@ async def start(client, message):
             media = getattr(msg, msg.media.value)
             file_id = media.file_id
             file = await client.download_media(file_id)
-            try: 
+            try:
                 with open(file) as file_data:
                     msgs=json.loads(file_data.read())
             except:
@@ -181,7 +181,7 @@ async def start(client, message):
                 return await client.send_message(LOG_CHANNEL, "UNABLE TO OPEN FILE.")
             os.remove(file)
             BATCH_FILES[file_id] = msgs
-            
+
         filesarr = []
         for msg in msgs:
             channel_id = int(msg.get("channel_id"))
@@ -233,7 +233,7 @@ async def start(client, message):
                 except:
                     continue
             filesarr.append(msg)
-            await asyncio.sleep(1) 
+            await asyncio.sleep(1)
         await sts.delete()
         if AUTO_DELETE_MODE == True:
             k = await client.send_message(chat_id=message.from_user.id, text=f"<b><u>❗️❗️❗️IMPORTANT❗️️❗️❗️</u></b>\n\nThis Movie File/Video will be deleted in <b><u>{AUTO_DELETE} minutes</u> 🫥 <i></b>(Due to Copyright Issues)</i>.\n\n<b><i>Please forward this File/Video to your Saved Messages and Start Download there</b>")
@@ -430,5 +430,6 @@ async def shortener_api_handler(client, m: Message):
     if len(cmd) == 1:
         s = script.SHORTENER_API_MESSAGE.format(base_site=user["base_site"], shortener_api=user["shortener_api"])
         return await m.reply(s)
-    elif len(cmd) == 2:    
-        
+    elif len(cmd) == 2:
+        api = cmd[1].strip()
+        a
