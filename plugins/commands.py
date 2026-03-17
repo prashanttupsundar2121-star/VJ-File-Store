@@ -432,4 +432,4 @@ async def shortener_api_handler(client, m: Message):
         return await m.reply(s)
     elif len(cmd) == 2:
         api = cmd[1].strip()
-   
+  
