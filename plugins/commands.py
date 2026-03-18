@@ -479,4 +479,4 @@ async def ban_user_handler(client, message):
     try:
         user_id = int(args[1])
     except ValueError:
-        return await message.reply_text("<b>Invalid user ID.</b>", parse_mode=enu
+        return await message.reply_text("<b>Invalid user ID.</b>", parse_mode=enu 
