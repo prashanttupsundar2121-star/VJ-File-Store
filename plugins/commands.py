@@ -22,7 +22,6 @@ BATCH_FILES = {}
 
 
 def get_size(size):
-    """Get size in readable format"""
     units = ["Bytes", "KB", "MB", "GB", "TB", "PB", "EB"]
     size = float(size)
     i = 0
@@ -39,15 +38,11 @@ def formate_file_name(file_name):
     return file_name
 
 
-
 async def check_force_sub(client, user_id):
-    """Returns list of channels user hasn't joined. Empty = all joined."""
     if not await db.is_fsub_enabled():
         return []
-
     channels = await db.get_fsub_channels()
     not_joined = []
-
     for ch_id in channels:
         try:
             member = await client.get_chat_member(ch_id, user_id)
@@ -57,12 +52,10 @@ async def check_force_sub(client, user_id):
             not_joined.append(ch_id)
         except Exception as e:
             logger.warning(f"Force sub check error for {ch_id}: {e}")
-
     return not_joined
 
 
 async def get_fsub_buttons(client, not_joined_channels):
-    """Build join buttons for channels user hasn't joined."""
     buttons = []
     for i, ch_id in enumerate(not_joined_channels):
         try:
@@ -72,12 +65,11 @@ async def get_fsub_buttons(client, not_joined_channels):
             else:
                 invite = await client.create_chat_invite_link(ch_id)
                 url = invite.invite_link
-            buttons.append([InlineKeyboardButton(f"📢 Join Channel {i+1}", url=url)])
+            buttons.append([InlineKeyboardButton(f"Join Channel {i+1}", url=url)])
         except Exception as e:
             logger.error(f"get_fsub_buttons error: {e}")
-    buttons.append([InlineKeyboardButton("✅ I Joined All Channels", callback_data="fsub_check")])
+    buttons.append([InlineKeyboardButton("I Joined All Channels", callback_data="fsub_check")])
     return InlineKeyboardMarkup(buttons)
-
 
 
 @Client.on_message(filters.command("start") & filters.incoming)
@@ -86,6 +78,8 @@ async def start(client, message):
     if not await db.is_user_exist(message.from_user.id):
         await db.add_user(message.from_user.id, message.from_user.first_name)
         await client.send_message(LOG_CHANNEL, script.LOG_TEXT.format(message.from_user.id, message.from_user.mention))
+    if await db.is_banned(message.from_user.id):
+        return await message.reply_text("<b>You are banned. Contact @GTK26.</b>", parse_mode=enums.ParseMode.HTML)
     if len(message.command) != 2:
         buttons = [[
             InlineKeyboardButton('🌸 Jᴏɪɴ ᴏᴜʀ ᴀɴɪᴍᴇ ᴄʜᴀɴɴᴇʟ', url='https://t.me/infinite_animes')
@@ -142,11 +136,10 @@ async def start(client, message):
             kb = await get_fsub_buttons(client, not_joined)
             return await message.reply_photo(
                 photo=random.choice(PICS),
-                caption="<b>⚠️ You must join our channels to get files!\n\nPlease join all channels below and click ✅ I Joined All Channels</b>",
+                caption="<b>Please join all channels first!</b>",
                 reply_markup=kb,
                 parse_mode=enums.ParseMode.HTML
             )
-
         try:
             if not await check_verification(client, message.from_user.id) and VERIFY_MODE == True:
                 btn = [[
@@ -162,7 +155,7 @@ async def start(client, message):
                 return
         except Exception as e:
             return await message.reply_text(f"**Error - {e}**")
-        sts = await message.reply("**🔺 ᴘʟᴇᴀsᴇ ᴡᴀɪᴛ**")
+        sts = await message.reply("**Please Wait...**")
         file_id = data.split("-", 1)[1]
         msgs = BATCH_FILES.get(file_id)
         if not msgs:
@@ -179,7 +172,6 @@ async def start(client, message):
                 return await client.send_message(LOG_CHANNEL, "UNABLE TO OPEN FILE.")
             os.remove(file)
             BATCH_FILES[file_id] = msgs
-
         filesarr = []
         for msg in msgs:
             channel_id = int(msg.get("channel_id"))
@@ -244,12 +236,12 @@ async def start(client, message):
             await k.edit_text("<b>Your All Files/Videos is successfully deleted!!!</b>")
         return
 
-        not_joined = await check_force_sub(client, message.from_user.id)
+    not_joined = await check_force_sub(client, message.from_user.id)
     if not_joined:
         kb = await get_fsub_buttons(client, not_joined)
         return await message.reply_photo(
             photo=random.choice(PICS),
-            caption="<b>⚠️ You must join our channels to get files!\n\nPlease join all channels below and click ✅ I Joined All Channels</b>",
+            caption="<b>Please join all channels first!</b>",
             reply_markup=kb,
             parse_mode=enums.ParseMode.HTML
         )
@@ -309,28 +301,24 @@ async def start(client, message):
         pass
 
 
-
 @Client.on_message(filters.command("fsub") & filters.private)
 async def fsub_handler(client, message):
     user_id = message.from_user.id
     if user_id not in ADMINS:
-        return await message.reply_text(
-            "<b>Not authorized.</b>",
-            parse_mode=enums.ParseMode.HTML
-        )
+        return await message.reply_text("<b>Not authorized.</b>", parse_mode=enums.ParseMode.HTML)
     channels = await db.get_fsub_channels()
     enabled = await db.is_fsub_enabled()
     ch_list = "\n".join([f"  • <code>{ch}</code>" for ch in channels]) if channels else "  None"
     text = (
-        f"<b>📢 Force Subscribe Settings</b>\n\n"
-        f"Status: <b>{'✅ Enabled' if enabled else '❌ Disabled'}</b>\n"
+        f"<b>Force Subscribe Settings</b>\n\n"
+        f"Status: <b>{'Enabled' if enabled else 'Disabled'}</b>\n"
         f"Channels ({len(channels)}):\n{ch_list}\n\n"
         f"<b>Commands:</b>\n"
-        f"/fsub_add <code>channel_id</code> — Add channel\n"
-        f"/fsub_remove <code>channel_id</code> — Remove channel\n"
-        f"/fsub_list — Show all channels\n"
-        f"/fsub_on — Enable force sub\n"
-        f"/fsub_off — Disable force sub"
+        f"/fsub_add channel_id\n"
+        f"/fsub_remove channel_id\n"
+        f"/fsub_list\n"
+        f"/fsub_on\n"
+        f"/fsub_off"
     )
     await message.reply_text(text, parse_mode=enums.ParseMode.HTML)
 
@@ -338,39 +326,30 @@ async def fsub_handler(client, message):
 @Client.on_message(filters.command("fsub_on") & filters.private)
 async def fsub_on(client, message):
     if message.from_user.id not in ADMINS:
-        return await message.reply_text(
-            "<b>Not authorized.</b>",
-            parse_mode=enums.ParseMode.HTML
-        )
+        return await message.reply_text("<b>Not authorized.</b>", parse_mode=enums.ParseMode.HTML)
     await db.set_fsub_enabled(True)
-    await message.reply_text("<b>✅ Force Subscribe ENABLED!</b>", parse_mode=enums.ParseMode.HTML)
+    await message.reply_text("<b>Force Subscribe ENABLED!</b>", parse_mode=enums.ParseMode.HTML)
 
 
 @Client.on_message(filters.command("fsub_off") & filters.private)
 async def fsub_off(client, message):
     if message.from_user.id not in ADMINS:
-        return await message.reply_text(
-            "<b>Not authorized.</b>",
-            parse_mode=enums.ParseMode.HTML
-        )
+        return await message.reply_text("<b>Not authorized.</b>", parse_mode=enums.ParseMode.HTML)
     await db.set_fsub_enabled(False)
-    await message.reply_text("<b>❌ Force Subscribe DISABLED!</b>", parse_mode=enums.ParseMode.HTML)
+    await message.reply_text("<b>Force Subscribe DISABLED!</b>", parse_mode=enums.ParseMode.HTML)
 
 
 @Client.on_message(filters.command("fsub_list") & filters.private)
 async def fsub_list(client, message):
     if message.from_user.id not in ADMINS:
-        return await message.reply_text(
-            "<b>Not authorized.</b>",
-            parse_mode=enums.ParseMode.HTML
-        )
+        return await message.reply_text("<b>Not authorized.</b>", parse_mode=enums.ParseMode.HTML)
     channels = await db.get_fsub_channels()
     enabled = await db.is_fsub_enabled()
     if not channels:
         return await message.reply_text("<b>No channels added yet.</b>", parse_mode=enums.ParseMode.HTML)
     ch_list = "\n".join([f"{i+1}. <code>{ch}</code>" for i, ch in enumerate(channels)])
     await message.reply_text(
-        f"<b>📢 Force Sub Channels</b>\nStatus: {'✅ ON' if enabled else '❌ OFF'}\n\n{ch_list}",
+        f"<b>Force Sub Channels</b>\nStatus: {'ON' if enabled else 'OFF'}\n\n{ch_list}",
         parse_mode=enums.ParseMode.HTML
     )
 
@@ -378,47 +357,40 @@ async def fsub_list(client, message):
 @Client.on_message(filters.command("fsub_add") & filters.private)
 async def fsub_add(client, message):
     if message.from_user.id not in ADMINS:
-        return await message.reply_text(
-            "<b>Not authorized.</b>",
-            parse_mode=enums.ParseMode.HTML
-        )
+        return await message.reply_text("<b>Not authorized.</b>", parse_mode=enums.ParseMode.HTML)
     args = message.command
     if len(args) < 2:
-        return await message.reply_text("<b>Usage: /fsub_add <code>channel_id</code>\n\nExample: /fsub_add -1001234567890</b>", parse_mode=enums.ParseMode.HTML)
+        return await message.reply_text("<b>Usage: /fsub_add channel_id</b>", parse_mode=enums.ParseMode.HTML)
     try:
         ch_id = int(args[1])
     except ValueError:
-        return await message.reply_text("<b>❌ Invalid channel ID. Example: -1001234567890</b>", parse_mode=enums.ParseMode.HTML)
+        return await message.reply_text("<b>Invalid channel ID.</b>", parse_mode=enums.ParseMode.HTML)
     channels = await db.get_fsub_channels()
     if len(channels) >= 4:
-        return await message.reply_text("<b>❌ Maximum 4 channels allowed!</b>", parse_mode=enums.ParseMode.HTML)
+        return await message.reply_text("<b>Max 4 channels allowed!</b>", parse_mode=enums.ParseMode.HTML)
     result = await db.add_fsub_channel(ch_id)
     if result:
-        await message.reply_text(f"<b>✅ Channel <code>{ch_id}</code> added!</b>", parse_mode=enums.ParseMode.HTML)
+        await message.reply_text(f"<b>Channel {ch_id} added!</b>", parse_mode=enums.ParseMode.HTML)
     else:
-        await message.reply_text(f"<b>⚠️ Channel <code>{ch_id}</code> already exists!</b>", parse_mode=enums.ParseMode.HTML)
+        await message.reply_text(f"<b>Channel {ch_id} already exists!</b>", parse_mode=enums.ParseMode.HTML)
 
 
 @Client.on_message(filters.command("fsub_remove") & filters.private)
 async def fsub_remove(client, message):
     if message.from_user.id not in ADMINS:
-        return await message.reply_text(
-            "<b>Not authorized.</b>",
-            parse_mode=enums.ParseMode.HTML
-        )
+        return await message.reply_text("<b>Not authorized.</b>", parse_mode=enums.ParseMode.HTML)
     args = message.command
     if len(args) < 2:
-        return await message.reply_text("<b>Usage: /fsub_remove <code>channel_id</code></b>", parse_mode=enums.ParseMode.HTML)
+        return await message.reply_text("<b>Usage: /fsub_remove channel_id</b>", parse_mode=enums.ParseMode.HTML)
     try:
         ch_id = int(args[1])
     except ValueError:
-        return await message.reply_text("<b>❌ Invalid channel ID.</b>", parse_mode=enums.ParseMode.HTML)
+        return await message.reply_text("<b>Invalid channel ID.</b>", parse_mode=enums.ParseMode.HTML)
     result = await db.remove_fsub_channel(ch_id)
     if result:
-        await message.reply_text(f"<b>✅ Channel <code>{ch_id}</code> removed!</b>", parse_mode=enums.ParseMode.HTML)
+        await message.reply_text(f"<b>Channel {ch_id} removed!</b>", parse_mode=enums.ParseMode.HTML)
     else:
-        await message.reply_text(f"<b>❌ Channel <code>{ch_id}</code> not found!</b>", parse_mode=enums.ParseMode.HTML)
-
+        await message.reply_text(f"<b>Channel {ch_id} not found!</b>", parse_mode=enums.ParseMode.HTML)
 
 
 @Client.on_callback_query(filters.regex("^fsub_check$"))
@@ -426,115 +398,40 @@ async def fsub_check_callback(client, query):
     not_joined = await check_force_sub(client, query.from_user.id)
     if not_joined:
         kb = await get_fsub_buttons(client, not_joined)
-        await query.answer("You must join all channels first!", show_alert=True)
+        await query.answer("Join all channels first!", show_alert=True)
         await query.message.edit_reply_markup(kb)
     else:
-        await query.answer("Verified! Please click the file link again.", show_alert=True)
+        await query.answer("Verified! Click the file link again.", show_alert=True)
         await query.message.delete()
 
 
+@Client.on_message(filters.command("add_banuser") & filters.private)
+async def ban_user_handler(client, message):
+    if message.from_user.id not in ADMINS:
+        return await message.reply_text("<b>Not authorized.</b>", parse_mode=enums.ParseMode.HTML)
+    args = message.command
+    if len(args) < 2:
+        return await message.reply_text("<b>Usage: /add_banuser user_id</b>", parse_mode=enums.ParseMode.HTML)
+    try:
+        user_id = int(args[1])
+    except ValueError:
+        return await message.reply_text("<b>Invalid user ID.</b>", parse_mode=enums.ParseMode.HTML)
+    await db.ban_user(user_id)
+    await message.reply_text(f"<b>User {user_id} BANNED!</b>", parse_mode=enums.ParseMode.HTML)
+    try:
+        await client.send_message(user_id, "<b>You are banned. Contact @GTK26.</b>", parse_mode=enums.ParseMode.HTML)
+    except Exception:
+        pass
 
 
-
-@Client.on_message(filters.command('api') & filters.private)
-async def shortener_api_handler(client, m: Message):
-    user_id = m.from_user.id
-    user = await get_user(user_id)
-    cmd = m.command
-    if len(cmd) == 1:
-        s = script.SHORTENER_API_MESSAGE.format(base_site=user["base_site"], shortener_api=user["shortener_api"])
-        return await m.reply(s)
-    elif len(cmd) == 2:
-        api = cmd[1].strip()
-        await update_user_info(user_id, {"shortener_api": api})
-        await m.reply("<b>Shortener API updated successfully to</b> " + api)
-
-
-@Client.on_message(filters.command("base_site") & filters.private)
-async def base_site_handler(client, m: Message):
-    user_id = m.from_user.id
-    user = await get_user(user_id)
-    cmd = m.command
-    text = "<b>Usage: /base_site domain.com</b>"
-    if len(cmd) == 1:
-        return await m.reply(text=text, disable_web_page_preview=True)
-    elif len(cmd) == 2:
-        base_site = cmd[1].strip()
-        if base_site == None:
-            await update_user_info(user_id, {"base_site": base_site})
-            return await m.reply("<b>Base Site updated successfully</b>")
-        if not domain(base_site):
-            return await m.reply(text=text, disable_web_page_preview=True)
-        await update_user_info(user_id, {"base_site": base_site})
-        await m.reply("<b>Base Site updated successfully</b>")
-
-
-@Client.on_callback_query()
-async def cb_handler(client: Client, query: CallbackQuery):
-    if query.data == "close_data":
-        await query.answer()
-        try:
-            await query.message.delete()
-        except Exception:
-            pass
-    elif query.data == "about":
-        buttons = [[
-            InlineKeyboardButton('Hᴏᴍᴇ', callback_data='start'),
-            InlineKeyboardButton('Close', callback_data='close_data')
-        ]]
-        reply_markup = InlineKeyboardMarkup(buttons)
-        await query.answer()
-        me2 = (await client.get_me()).mention
-        try:
-            await query.message.delete()
-        except Exception:
-            pass
-        await client.send_message(
-            chat_id=query.message.chat.id,
-            text=script.ABOUT_TXT.format(me2),
-            reply_markup=reply_markup,
-            parse_mode=enums.ParseMode.HTML
-        )
-    elif query.data == "start":
-        buttons = [[
-            InlineKeyboardButton('🌸 Jᴏɪɴ ᴏᴜʀ ᴀɴɪᴍᴇ ᴄʜᴀɴɴᴇʟ', url='https://t.me/infinite_animes')
-        ],[
-            InlineKeyboardButton('🔍 ᴀɴɪᴍᴇ sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ', url='https://t.me/animeinhindifangroup'),
-            InlineKeyboardButton('🎌 ɪɴғɪɴɪᴛᴇ ᴅʀᴀᴍᴀs', url='https://t.me/infinite_dramas')
-        ],[
-            InlineKeyboardButton('🎭 ᴅʀᴀᴍᴀ sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ', url='https://t.me/+dxm_jP224jI3ZjFl'),
-            InlineKeyboardButton('👨‍💻 ᴅᴇᴠᴇʟᴏᴘᴇʀ', url='https://t.me/GTK26')
-        ]]
-        if CLONE_MODE == True:
-            buttons.append([InlineKeyboardButton('🤖 ᴄʀᴇᴀᴛᴇ ʏᴏᴜʀ ᴏᴡɴ ᴄʟᴏɴᴇ ʙᴏᴛ', callback_data='clone')])
-        reply_markup = InlineKeyboardMarkup(buttons)
-        await query.answer()
-        me2 = (await client.get_me()).mention
-        try:
-            await query.message.delete()
-        except Exception:
-            pass
-        await client.send_photo(
-            chat_id=query.message.chat.id,
-            photo=random.choice(PICS),
-            caption=script.START_TXT.format(query.from_user.mention, me2),
-            reply_markup=reply_markup,
-            parse_mode=enums.ParseMode.HTML
-        )
-    elif query.data == "clone":
-        buttons = [[
-            InlineKeyboardButton('Hᴏᴍᴇ', callback_data='start'),
-            InlineKeyboardButton('Close', callback_data='close_data')
-        ]]
-        reply_markup = InlineKeyboardMarkup(buttons)
-        await query.answer()
-        try:
-            await query.message.delete()
-        except Exception:
-            pass
-        await client.send_message(
-            chat_id=query.message.chat.id,
-            text=script.CLONE_TXT.format(query.from_user.mention),
-            reply_markup=reply_markup,
-            parse_mode=enums.ParseMode.HTML
-        )
+@Client.on_message(filters.command("del_banuser") & filters.private)
+async def unban_user_handler(client, message):
+    if message.from_user.id not in ADMINS:
+        return await message.reply_text("<b>Not authorized.</b>", parse_mode=enums.ParseMode.HTML)
+    args = message.command
+    if len(args) < 2:
+        return await message.reply_text("<b>Usage: /del_banuser user_id</b>", parse_mode=enums.ParseMode.HTML)
+    try:
+        user_id = int(args[1])
+    except ValueError:
+        return await message.reply_text("<b>Invalid
