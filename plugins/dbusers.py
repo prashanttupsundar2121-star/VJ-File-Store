@@ -78,5 +78,24 @@ class Database:
         settings = await self.get_fsub_settings()
         return settings.get('enabled', False)
 
+    async def ban_user(self, user_id: int):
+        await self.col.update_one(
+            {'id': int(user_id)},
+            {'$set': {'banned': True}},
+            upsert=True
+        )
+
+    async def unban_user(self, user_id: int):
+        await self.col.update_one(
+            {'id': int(user_id)},
+            {'$set': {'banned': False}}
+        )
+
+    async def is_banned(self, user_id: int):
+        user = await self.col.find_one({'id': int(user_id)})
+        if user:
+            return user.get('banned', False)
+        return False
+
 
 db = Database(DB_URI, DB_NAME)
