@@ -10,17 +10,14 @@ class Database:
         self.fsub_col = self.db.force_sub
 
     def new_user(self, id, name):
-        return dict(
-            id = id,
-            name = name,
-        )
+        return dict(id=id, name=name)
 
     async def add_user(self, id, name):
         user = self.new_user(id, name)
         await self.col.insert_one(user)
 
     async def is_user_exist(self, id):
-        user = await self.col.find_one({'id':int(id)})
+        user = await self.col.find_one({'id': int(id)})
         return bool(user)
 
     async def total_users_count(self):
@@ -32,8 +29,6 @@ class Database:
 
     async def delete_user(self, user_id):
         await self.col.delete_many({'id': int(user_id)})
-
-    # ── FORCE SUB METHODS ──────────────────────────────────────────
 
     async def get_fsub_settings(self):
         doc = await self.fsub_col.find_one({'_id': 'settings'})
@@ -82,28 +77,6 @@ class Database:
     async def is_fsub_enabled(self):
         settings = await self.get_fsub_settings()
         return settings.get('enabled', False)
-
-
-    # ── BAN METHODS ──────────────────────────────────────────────────
-
-    async def ban_user(self, user_id: int):
-        await self.col.update_one(
-            {'id': int(user_id)},
-            {'$set': {'banned': True}},
-            upsert=True
-        )
-
-    async def unban_user(self, user_id: int):
-        await self.col.update_one(
-            {'id': int(user_id)},
-            {'$set': {'banned': False}}
-        )
-
-    async def is_banned(self, user_id: int):
-        user = await self.col.find_one({'id': int(user_id)})
-        if user:
-            return user.get('banned', False)
-        return False
 
 
 db = Database(DB_URI, DB_NAME)
