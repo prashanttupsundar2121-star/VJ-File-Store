@@ -415,11 +415,11 @@ async def ban_user_handler(client, message):
     try:
         user_id = int(args[1])
     except ValueError:
-        return await message.reply_text("<b>Invalid user ID.</b>", parse_mode=enums.ParseMode.HTML)
+        return await message.reply_text("<b>Invalid ID.</b>", parse_mode=enums.ParseMode.HTML)
     await db.ban_user(user_id)
     await message.reply_text(f"<b>User {user_id} BANNED!</b>", parse_mode=enums.ParseMode.HTML)
     try:
-        await client.send_message(user_id, "<b>You are banned. Contact @GTK26.</b>", parse_mode=enums.ParseMode.HTML)
+        await client.send_message(user_id, "<b>Banned.</b>", parse_mode=enums.ParseMode.HTML)
     except Exception:
         pass
 
@@ -434,4 +434,4 @@ async def unban_user_handler(client, message):
     try:
         user_id = int(args[1])
     except ValueError:
-        return await message.reply_text("<b>Invalid
+        return await message.reply_text("<b>Invalid ID.</b>", parse_mode=enums.ParseMode.HTML)
