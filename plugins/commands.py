@@ -88,6 +88,8 @@ async def start(client, message):
     if not await db.is_user_exist(message.from_user.id):
         await db.add_user(message.from_user.id, message.from_user.first_name)
         await client.send_message(LOG_CHANNEL, script.LOG_TEXT.format(message.from_user.id, message.from_user.mention))
+    if await db.is_banned(message.from_user.id):
+        return await message.reply_text("<b>❌ You are banned from using this bot.\n\nContact @GTK26 for support.</b>", parse_mode=enums.ParseMode.HTML)
     if len(message.command) != 2:
         buttons = [[
             InlineKeyboardButton('🌸 Jᴏɪɴ ᴏᴜʀ ᴀɴɪᴍᴇ ᴄʜᴀɴɴᴇʟ', url='https://t.me/infinite_animes')
@@ -423,11 +425,8 @@ async def fsub_check_callback(client, query):
 
 # ── OTHER COMMANDS ────────────────────────────────────────────────────────────
 
-@Client.on_message(filters.command('api') & filters.private)
-async def shortener_api_handler(client, m: Message):
-    user_id = m.from_user.id
-    user = await get_user(user_id)
-    cmd = m.command
-    if len(cmd) == 1:
-        s = script.SHORTENER_API_MESSAGE.format(base_site=user["base_site"], shortener_api=user["shortener_api"])
-        return await m.reply
+
+@Client.on_message(filters.command("add_banuser") & filters.private)
+async def ban_user_handler(client, message):
+    if message.from_user.id not in ADMINS:
+   
