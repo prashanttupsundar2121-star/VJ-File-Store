@@ -39,7 +39,6 @@ def formate_file_name(file_name):
     return file_name
 
 
-# ── FORCE SUB CHECK ──────────────────────────────────────────────────────────
 
 async def check_force_sub(client, user_id):
     """Returns list of channels user hasn't joined. Empty = all joined."""
@@ -80,7 +79,6 @@ async def get_fsub_buttons(client, not_joined_channels):
     return InlineKeyboardMarkup(buttons)
 
 
-# ── /start COMMAND ────────────────────────────────────────────────────────────
 
 @Client.on_message(filters.command("start") & filters.incoming)
 async def start(client, message):
@@ -144,7 +142,6 @@ async def start(client, message):
             )
 
     elif data.split("-", 1)[0] == "BATCH":
-        # ── Force Sub Check ──
         not_joined = await check_force_sub(client, message.from_user.id)
         if not_joined:
             kb = await get_fsub_buttons(client, not_joined)
@@ -252,8 +249,7 @@ async def start(client, message):
             await k.edit_text("<b>Your All Files/Videos is successfully deleted!!!</b>")
         return
 
-    # ── Force Sub Check for single file ──
-    not_joined = await check_force_sub(client, message.from_user.id)
+        not_joined = await check_force_sub(client, message.from_user.id)
     if not_joined:
         kb = await get_fsub_buttons(client, not_joined)
         return await message.reply_photo(
@@ -318,13 +314,15 @@ async def start(client, message):
         pass
 
 
-# ── FORCE SUB COMMANDS ────────────────────────────────────────────────────────
 
 @Client.on_message(filters.command("fsub") & filters.private)
 async def fsub_handler(client, message):
     user_id = message.from_user.id
     if user_id not in ADMINS:
-        return await message.reply_text("<b>You are not authorized to use this command.</b>", parse_mode=enums.ParseMode.HTML)
+        return await message.reply_text(
+            "<b>Not authorized.</b>",
+            parse_mode=enums.ParseMode.HTML
+        )
     channels = await db.get_fsub_channels()
     enabled = await db.is_fsub_enabled()
     ch_list = "\n".join([f"  • <code>{ch}</code>" for ch in channels]) if channels else "  None"
@@ -345,7 +343,10 @@ async def fsub_handler(client, message):
 @Client.on_message(filters.command("fsub_on") & filters.private)
 async def fsub_on(client, message):
     if message.from_user.id not in ADMINS:
-        return await message.reply_text("<b>You are not authorized to use this command.</b>", parse_mode=enums.ParseMode.HTML)
+        return await message.reply_text(
+            "<b>Not authorized.</b>",
+            parse_mode=enums.ParseMode.HTML
+        )
     await db.set_fsub_enabled(True)
     await message.reply_text("<b>✅ Force Subscribe ENABLED!</b>", parse_mode=enums.ParseMode.HTML)
 
@@ -353,7 +354,10 @@ async def fsub_on(client, message):
 @Client.on_message(filters.command("fsub_off") & filters.private)
 async def fsub_off(client, message):
     if message.from_user.id not in ADMINS:
-        return await message.reply_text("<b>You are not authorized to use this command.</b>", parse_mode=enums.ParseMode.HTML)
+        return await message.reply_text(
+            "<b>Not authorized.</b>",
+            parse_mode=enums.ParseMode.HTML
+        )
     await db.set_fsub_enabled(False)
     await message.reply_text("<b>❌ Force Subscribe DISABLED!</b>", parse_mode=enums.ParseMode.HTML)
 
@@ -361,7 +365,10 @@ async def fsub_off(client, message):
 @Client.on_message(filters.command("fsub_list") & filters.private)
 async def fsub_list(client, message):
     if message.from_user.id not in ADMINS:
-        return await message.reply_text("<b>You are not authorized to use this command.</b>", parse_mode=enums.ParseMode.HTML)
+        return await message.reply_text(
+            "<b>Not authorized.</b>",
+            parse_mode=enums.ParseMode.HTML
+        )
     channels = await db.get_fsub_channels()
     enabled = await db.is_fsub_enabled()
     if not channels:
@@ -376,7 +383,10 @@ async def fsub_list(client, message):
 @Client.on_message(filters.command("fsub_add") & filters.private)
 async def fsub_add(client, message):
     if message.from_user.id not in ADMINS:
-        return await message.reply_text("<b>You are not authorized to use this command.</b>", parse_mode=enums.ParseMode.HTML)
+        return await message.reply_text(
+            "<b>Not authorized.</b>",
+            parse_mode=enums.ParseMode.HTML
+        )
     args = message.command
     if len(args) < 2:
         return await message.reply_text("<b>Usage: /fsub_add <code>channel_id</code>\n\nExample: /fsub_add -1001234567890</b>", parse_mode=enums.ParseMode.HTML)
@@ -397,7 +407,10 @@ async def fsub_add(client, message):
 @Client.on_message(filters.command("fsub_remove") & filters.private)
 async def fsub_remove(client, message):
     if message.from_user.id not in ADMINS:
-        return await message.reply_text("<b>You are not authorized to use this command.</b>", parse_mode=enums.ParseMode.HTML)
+        return await message.reply_text(
+            "<b>Not authorized.</b>",
+            parse_mode=enums.ParseMode.HTML
+        )
     args = message.command
     if len(args) < 2:
         return await message.reply_text("<b>Usage: /fsub_remove <code>channel_id</code></b>", parse_mode=enums.ParseMode.HTML)
@@ -412,21 +425,33 @@ async def fsub_remove(client, message):
         await message.reply_text(f"<b>❌ Channel <code>{ch_id}</code> not found!</b>", parse_mode=enums.ParseMode.HTML)
 
 
-# ── FORCE SUB CHECK CALLBACK ─────────────────────────────────────────────────
 
 @Client.on_callback_query(filters.regex("^fsub_check$"))
 async def fsub_check_callback(client, query):
     not_joined = await check_force_sub(client, query.from_user.id)
     if not_joined:
         kb = await get_fsub_buttons(client, not_joined)
-        await query.answer("❌ You haven't joined all channels yet!", show_alert=True)
+        await query.answer("You must join all channels first!", show_alert=True)
         await query.message.edit_reply_markup(kb)
     else:
-        await query.answer("✅ Verified! Please click the file link again.", show_alert=True)
+        await query.answer("Verified! Please click the file link again.", show_alert=True)
         await query.message.delete()
 
 
-# ── OTHER COMMANDS ────────────────────────────────────────────────────────────
 
 
-@Client.on_message(filters.command("add_banuser") & fil
+@Client.on_message(filters.command("add_banuser") & filters.private)
+async def ban_user_handler(client, message):
+    if message.from_user.id not in ADMINS:
+        return await message.reply_text(
+            "<b>Not authorized.</b>",
+            parse_mode=enums.ParseMode.HTML
+        )
+    args = message.command
+    if len(args) < 2:
+        return await message.reply_text(
+            "<b>Usage: /add_banuser user_id</b>",
+            parse_mode=enums.ParseMode.HTML
+        )
+    try:
+        
