@@ -359,7 +359,9 @@ async def start(client, message):
 @Client.on_message(filters.command("fsub") & filters.private)
 async def fsub_handler(client, message):
     if message.from_user.id not in ADMINS:
-        return await message.reply_text("<b>Not authorized.</b>", parse_mode=enums.ParseMode.HTML)
+        return await message.reply_text("<b>Not authorized.</b>",
+            parse_mode=enums.ParseMode.HTML
+        )
     channels = await db.get_fsub_channels()
     enabled = await db.is_fsub_enabled()
     ch_list = "\n".join([f"  - {ch}" for ch in channels]) if channels else "  None"
@@ -380,27 +382,39 @@ async def fsub_handler(client, message):
 @Client.on_message(filters.command("fsub_on") & filters.private)
 async def fsub_on(client, message):
     if message.from_user.id not in ADMINS:
-        return await message.reply_text("<b>Not authorized.</b>", parse_mode=enums.ParseMode.HTML)
+        return await message.reply_text("<b>Not authorized.</b>",
+            parse_mode=enums.ParseMode.HTML
+        )
     await db.set_fsub_enabled(True)
-    await message.reply_text("<b>Force Subscribe ENABLED!</b>", parse_mode=enums.ParseMode.HTML)
+    await message.reply_text("<b>Force Subscribe ENABLED!</b>",
+        parse_mode=enums.ParseMode.HTML
+    )
 
 
 @Client.on_message(filters.command("fsub_off") & filters.private)
 async def fsub_off(client, message):
     if message.from_user.id not in ADMINS:
-        return await message.reply_text("<b>Not authorized.</b>", parse_mode=enums.ParseMode.HTML)
+        return await message.reply_text("<b>Not authorized.</b>",
+            parse_mode=enums.ParseMode.HTML
+        )
     await db.set_fsub_enabled(False)
-    await message.reply_text("<b>Force Subscribe DISABLED!</b>", parse_mode=enums.ParseMode.HTML)
+    await message.reply_text("<b>Force Subscribe DISABLED!</b>",
+        parse_mode=enums.ParseMode.HTML
+    )
 
 
 @Client.on_message(filters.command("fsub_list") & filters.private)
 async def fsub_list(client, message):
     if message.from_user.id not in ADMINS:
-        return await message.reply_text("<b>Not authorized.</b>", parse_mode=enums.ParseMode.HTML)
+        return await message.reply_text("<b>Not authorized.</b>",
+            parse_mode=enums.ParseMode.HTML
+        )
     channels = await db.get_fsub_channels()
     enabled = await db.is_fsub_enabled()
     if not channels:
-        return await message.reply_text("<b>No channels added yet.</b>", parse_mode=enums.ParseMode.HTML)
+        return await message.reply_text("<b>No channels added yet.</b>",
+            parse_mode=enums.ParseMode.HTML
+        )
     ch_list = "\n".join([f"{i+1}. {ch}" for i, ch in enumerate(channels)])
     status = "ON" if enabled else "OFF"
     await message.reply_text(
@@ -412,7 +426,9 @@ async def fsub_list(client, message):
 @Client.on_message(filters.command("fsub_add") & filters.private)
 async def fsub_add(client, message):
     if message.from_user.id not in ADMINS:
-        return await message.reply_text("<b>Not authorized.</b>", parse_mode=enums.ParseMode.HTML)
+        return await message.reply_text("<b>Not authorized.</b>",
+            parse_mode=enums.ParseMode.HTML
+        )
     args = message.command
     if len(args) < 2:
         return await message.reply_text(
@@ -422,21 +438,31 @@ async def fsub_add(client, message):
     try:
         ch_id = int(args[1])
     except ValueError:
-        return await message.reply_text("<b>Invalid channel ID.</b>", parse_mode=enums.ParseMode.HTML)
+        return await message.reply_text("<b>Invalid channel ID.</b>",
+            parse_mode=enums.ParseMode.HTML
+        )
     channels = await db.get_fsub_channels()
     if len(channels) >= 4:
-        return await message.reply_text("<b>Maximum 4 channels allowed!</b>", parse_mode=enums.ParseMode.HTML)
+        return await message.reply_text("<b>Maximum 4 channels allowed!</b>",
+            parse_mode=enums.ParseMode.HTML
+        )
     result = await db.add_fsub_channel(ch_id)
     if result:
-        await message.reply_text(f"<b>Channel {ch_id} added!</b>", parse_mode=enums.ParseMode.HTML)
+        await message.reply_text(f"<b>Channel {ch_id} added!</b>",
+            parse_mode=enums.ParseMode.HTML
+        )
     else:
-        await message.reply_text(f"<b>Channel {ch_id} already exists!</b>", parse_mode=enums.ParseMode.HTML)
+        await message.reply_text(f"<b>Channel {ch_id} already exists!</b>",
+            parse_mode=enums.ParseMode.HTML
+        )
 
 
 @Client.on_message(filters.command("fsub_remove") & filters.private)
 async def fsub_remove(client, message):
     if message.from_user.id not in ADMINS:
-        return await message.reply_text("<b>Not authorized.</b>", parse_mode=enums.ParseMode.HTML)
+        return await message.reply_text("<b>Not authorized.</b>",
+            parse_mode=enums.ParseMode.HTML
+        )
     args = message.command
     if len(args) < 2:
         return await message.reply_text(
@@ -446,12 +472,18 @@ async def fsub_remove(client, message):
     try:
         ch_id = int(args[1])
     except ValueError:
-        return await message.reply_text("<b>Invalid channel ID.</b>", parse_mode=enums.ParseMode.HTML)
+        return await message.reply_text("<b>Invalid channel ID.</b>",
+            parse_mode=enums.ParseMode.HTML
+        )
     result = await db.remove_fsub_channel(ch_id)
     if result:
-        await message.reply_text(f"<b>Channel {ch_id} removed!</b>", parse_mode=enums.ParseMode.HTML)
+        await message.reply_text(f"<b>Channel {ch_id} removed!</b>",
+            parse_mode=enums.ParseMode.HTML
+        )
     else:
-        await message.reply_text(f"<b>Channel {ch_id} not found!</b>", parse_mode=enums.ParseMode.HTML)
+        await message.reply_text(f"<b>Channel {ch_id} not found!</b>",
+            parse_mode=enums.ParseMode.HTML
+        )
 
 
 @Client.on_callback_query(filters.regex("^fsub_check$"))
@@ -469,14 +501,6 @@ async def fsub_check_callback(client, query):
 @Client.on_message(filters.command("add_banuser") & filters.private)
 async def ban_user_handler(client, message):
     if message.from_user.id not in ADMINS:
-        return await message.reply_text("<b>Not authorized.</b>", parse_mode=enums.ParseMode.HTML)
-    args = message.command
-    if len(args) < 2:
-        return await message.reply_text(
-            "<b>Usage: /add_banuser user_id</b>",
+        return await message.reply_text("<b>Not authorized.</b>",
             parse_mode=enums.ParseMode.HTML
-        )
-    try:
-        user_id = int(args[1])
-    except ValueError:
-        return await message.reply_text("<b>Invalid user ID.</b>", parse_mode=enu 
+       
