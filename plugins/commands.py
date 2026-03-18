@@ -452,4 +452,89 @@ async def shortener_api_handler(client, m: Message):
 
 @Client.on_message(filters.command("base_site") & filters.private)
 async def base_site_handler(client, m: Message):
-    user_id = m.from 
+    user_id = m.from_user.id
+    user = await get_user(user_id)
+    cmd = m.command
+    text = "<b>Usage: /base_site domain.com</b>"
+    if len(cmd) == 1:
+        return await m.reply(text=text, disable_web_page_preview=True)
+    elif len(cmd) == 2:
+        base_site = cmd[1].strip()
+        if base_site == None:
+            await update_user_info(user_id, {"base_site": base_site})
+            return await m.reply("<b>Base Site updated successfully</b>")
+        if not domain(base_site):
+            return await m.reply(text=text, disable_web_page_preview=True)
+        await update_user_info(user_id, {"base_site": base_site})
+        await m.reply("<b>Base Site updated successfully</b>")
+
+
+@Client.on_callback_query()
+async def cb_handler(client: Client, query: CallbackQuery):
+    if query.data == "close_data":
+        await query.answer()
+        try:
+            await query.message.delete()
+        except Exception:
+            pass
+    elif query.data == "about":
+        buttons = [[
+            InlineKeyboardButton('Hᴏᴍᴇ', callback_data='start'),
+            InlineKeyboardButton('Close', callback_data='close_data')
+        ]]
+        reply_markup = InlineKeyboardMarkup(buttons)
+        await query.answer()
+        me2 = (await client.get_me()).mention
+        try:
+            await query.message.delete()
+        except Exception:
+            pass
+        await client.send_message(
+            chat_id=query.message.chat.id,
+            text=script.ABOUT_TXT.format(me2),
+            reply_markup=reply_markup,
+            parse_mode=enums.ParseMode.HTML
+        )
+    elif query.data == "start":
+        buttons = [[
+            InlineKeyboardButton('🌸 Jᴏɪɴ ᴏᴜʀ ᴀɴɪᴍᴇ ᴄʜᴀɴɴᴇʟ', url='https://t.me/infinite_animes')
+        ],[
+            InlineKeyboardButton('🔍 ᴀɴɪᴍᴇ sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ', url='https://t.me/animeinhindifangroup'),
+            InlineKeyboardButton('🎌 ɪɴғɪɴɪᴛᴇ ᴅʀᴀᴍᴀs', url='https://t.me/infinite_dramas')
+        ],[
+            InlineKeyboardButton('🎭 ᴅʀᴀᴍᴀ sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ', url='https://t.me/+dxm_jP224jI3ZjFl'),
+            InlineKeyboardButton('👨‍💻 ᴅᴇᴠᴇʟᴏᴘᴇʀ', url='https://t.me/GTK26')
+        ]]
+        if CLONE_MODE == True:
+            buttons.append([InlineKeyboardButton('🤖 ᴄʀᴇᴀᴛᴇ ʏᴏᴜʀ ᴏᴡɴ ᴄʟᴏɴᴇ ʙᴏᴛ', callback_data='clone')])
+        reply_markup = InlineKeyboardMarkup(buttons)
+        await query.answer()
+        me2 = (await client.get_me()).mention
+        try:
+            await query.message.delete()
+        except Exception:
+            pass
+        await client.send_photo(
+            chat_id=query.message.chat.id,
+            photo=random.choice(PICS),
+            caption=script.START_TXT.format(query.from_user.mention, me2),
+            reply_markup=reply_markup,
+            parse_mode=enums.ParseMode.HTML
+        )
+    elif query.data == "clone":
+        buttons = [[
+            InlineKeyboardButton('Hᴏᴍᴇ', callback_data='start'),
+            InlineKeyboardButton('Close', callback_data='close_data')
+        ]]
+        reply_markup = InlineKeyboardMarkup(buttons)
+        await query.answer()
+        try:
+            await query.message.delete()
+        except Exception:
+            pass
+        await client.send_message(
+            chat_id=query.message.chat.id,
+            text=script.CLONE_TXT.format(query.from_user.mention),
+            reply_markup=reply_markup,
+            parse_mode=enums.ParseMode.HTML
+        )
