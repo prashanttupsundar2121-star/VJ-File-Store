@@ -94,24 +94,25 @@ async def start(client, message):
         )
     if len(message.command) != 2:
         buttons = [
-            [InlineKeyboardButton('Join Our Anime Channel', url='https://t.me/infinite_animes')],
+            [InlineKeyboardButton('🌸 Jᴏɪɴ ᴏᴜʀ ᴀɴɪᴍᴇ ᴄʜᴀɴɴᴇʟ', url='https://t.me/infinite_animes')],
             [
-                InlineKeyboardButton('Anime Support Group', url='https://t.me/animeinhindifangroup'),
-                InlineKeyboardButton('Infinite Dramas', url='https://t.me/infinite_dramas')
+                InlineKeyboardButton('🔍 ᴀɴɪᴍᴇ sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ', url='https://t.me/animeinhindifangroup'),
+                InlineKeyboardButton('🎌 ɪɴғɪɴɪᴛᴇ ᴅʀᴀᴍᴀs', url='https://t.me/infinite_dramas')
             ],
             [
-                InlineKeyboardButton('Drama Support Group', url='https://t.me/+dxm_jP224jI3ZjFl'),
-                InlineKeyboardButton('Developer', url='https://t.me/GTK26')
+                InlineKeyboardButton('🎭 ᴅʀᴀᴍᴀ sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ', url='https://t.me/+dxm_jP224jI3ZjFl'),
+                InlineKeyboardButton('👨‍💻 ᴅᴇᴠᴇʟᴏᴘᴇʀ', url='https://t.me/GTK26')
             ]
         ]
         if CLONE_MODE == True:
-            buttons.append([InlineKeyboardButton('Create Your Own Clone Bot', callback_data='clone')])
+            buttons.append([InlineKeyboardButton('🤖 ᴄʀᴇᴀᴛᴇ ʏᴏᴜʀ ᴏᴡɴ ᴄʟᴏɴᴇ ʙᴏᴛ', callback_data='clone')])
         reply_markup = InlineKeyboardMarkup(buttons)
         me = client.me
         await message.reply_photo(
             photo=random.choice(PICS),
             caption=script.START_TXT.format(message.from_user.mention, me.mention),
-            reply_markup=reply_markup
+            reply_markup=reply_markup,
+            message_effect_id=5104841245755180586
         )
         return
 
@@ -478,6 +479,4 @@ async def ban_user_handler(client, message):
     try:
         user_id = int(args[1])
     except ValueError:
-        return await message.reply_text("<b>Invalid user ID.</b>", parse_mode=enums.ParseMode.HTML)
-    await db.ban_user(user_id)
-    await message.repl
+        return await message.reply_text("<b>Invalid user ID.</b>", parse_mode=enu
